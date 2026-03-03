@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="da">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin</title>
+
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+
+    <header>
+        <nav class="nav">
+            <div class="nav-inner">
+
+                <a href="/" class="logo">Valby IF</a>
+
+                <button class="nav-toggle" id="navToggle">☰</button>
+
+                <div class="nav-links" id="navLinks">
+
+                    <a href="/" class="nav-link">Forside</a>
+
+                    <a href="/profile.html" id="profileLink" class="nav-link hidden">
+                        Min side
+                    </a>
+
+                    <a href="/admin.html" id="adminLink" class="nav-link hidden">
+                        Admin
+                    </a>
+
+                    <a href="/login.html" id="loginLink" class="nav-link">
+                        Log ind
+                    </a>
+
+                    <button id="logoutBtn" class="nav-link hidden">
+                        Log ud
+                    </button>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+
+        <section id="state" class="state" aria-live="polite"></section>
+
+        <!-- LOGIN OVERLAY -->
+        <div id="loginOverlay" class="overlay">
+            <section id="loginCard" class="admin-card overlay-card">
+                <h2 style="margin:0 0 8px;">Admin login</h2>
+                <p class="muted" style="margin:0 0 14px;">Log ind for at fortsætte.</p>
+
+                <form id="loginForm" class="form">
+
+                    <label class="label">
+                        Email
+                        <input id="loginEmail" type="email" class="input" required />
+                    </label>
+
+                    <label class="label">
+                        Password
+                        <input id="loginPassword" type="password" class="input" required />
+                    </label>
+
+                    <button class="button" type="submit">Log ind</button>
+
+                    <div id="loginMsg" class="form-msg" aria-live="polite"></div>
+
+                </form>
+            </section>
+        </div>
+
+
+        <!-- DASHBOARD -->
+        <section id="dash" class="admin-layout">
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>Events</h3>
+                    <button id="addEvent">+</button>
+                </div>
+                <div id="events"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>Opgaver</h3>
+                    <button id="addTask">+</button>
+                </div>
+                <div id="tasks"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>Detaljer</h3>
+                </div>
+
+                <div id="details"></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 🔥 PRINT / OVERVIEW MODAL -->
+    <div id="printModal" class="print-modal hidden">
+
+        <div class="print-modal-inner">
+
+            <div class="print-header">
+
+                <h2>Deltageroversigt</h2>
+
+                <div class="print-actions">
+                    <button id="printBtn" class="button">🖨 Print</button>
+                    <button id="closePrint" class="button">✕ Luk</button>
+                </div>
+
+            </div>
+
+            <div id="printContent"></div>
+
+        </div>
+
+    </div>
+
+
+    <script type="module" src="./js/admin.js"></script>
+    <script type="module" src="./js/api.js"></script>
+    <script type="module" src="/js/navbarAuth.js"></script>
+
+</body>
+
+</html>

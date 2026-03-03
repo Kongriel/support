@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="da">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Opgave</title>
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+    <header>
+        <nav class="nav">
+            <div class="nav-inner">
+
+                <a href="/" class="logo">Valby IF</a>
+
+                <button class="nav-toggle" id="navToggle">☰</button>
+
+                <div class="nav-links" id="navLinks">
+
+                    <a href="/" class="nav-link">Forside</a>
+
+                    <a href="/profile.html" id="profileLink" class="nav-link hidden">
+                        Min side
+                    </a>
+
+                    <a href="/admin.html" id="adminLink" class="nav-link hidden">
+                        Admin
+                    </a>
+
+                    <a href="/login.html" id="loginLink" class="nav-link">
+                        Log ind
+                    </a>
+
+                    <button id="logoutBtn" class="nav-link hidden">
+                        Log ud
+                    </button>
+
+                </div>
+            </div>
+        </nav>
+
+    </header>
+
+    <main class="container">
+        <section id="state" class="state" aria-live="polite"></section>
+
+        <section class="task-page" id="taskPage" hidden>
+            <div class="task-left">
+                <a id="backLink" class="backlink" href="./index.html">← Tilbage</a>
+
+                <h2 id="taskTitle" class="event-title"></h2>
+                <p id="taskDesc" class="event-desc"></p>
+
+                <div class="section-head">
+                    <h3>Vælg tidsrum</h3>
+                    <p class="muted">Vælg et tidsrum og udfyld tilmeldingen.</p>
+                </div>
+
+                <div id="slots" class="slots"></div>
+            </div>
+
+            <div class="task-right">
+                <div class="form-card">
+                    <h3 style="margin:0 0 8px;">Tilmelding</h3>
+                    <p class="muted" style="margin:0 0 14px;">
+                        Valgt tidsrum: <span id="selectedSlotLabel">Ingen valgt</span>
+                    </p>
+
+                    <form id="regForm" class="form">
+                        <label class="label">
+                            Navn *
+                            <input id="name" class="input" required />
+                        </label>
+
+
+
+                        <label class="label">
+                            Telefon
+                            <input id="phone" class="input" />
+                        </label>
+
+                        <label class="label">
+                            Note
+                            <textarea id="note" class="input" rows="3"></textarea>
+                        </label>
+                        <p class="muted">Vælg et tidsrum og udfyld tilmeldingen.</p>
+                        <button id="submitBtn" class="button" type="submit" disabled>
+                            Tilmeld
+                        </button>
+
+                        <div id="formMsg" class="form-msg" aria-live="polite"></div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./js/task.js"></script>
+    <script type="module" src="/js/navbarAuth.js"></script>
+
+</body>
+
+</html>

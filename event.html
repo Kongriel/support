@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="da">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Event</title>
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+    <header>
+        <nav class="nav">
+            <div class="nav-inner">
+
+                <a href="/" class="logo">Valby IF</a>
+
+                <button class="nav-toggle" id="navToggle">☰</button>
+
+                <div class="nav-links" id="navLinks">
+
+                    <a href="/" class="nav-link">Forside</a>
+
+                    <a href="/profile.html" id="profileLink" class="nav-link hidden">
+                        Min side
+                    </a>
+
+                    <a href="/admin.html" id="adminLink" class="nav-link hidden">
+                        Admin
+                    </a>
+
+                    <a href="/login.html" id="loginLink" class="nav-link">
+                        Log ind
+                    </a>
+
+                    <button id="logoutBtn" class="nav-link hidden">
+                        Log ud
+                    </button>
+
+                </div>
+            </div>
+        </nav>
+
+    </header>
+
+    <main class="container">
+        <section id="state" class="state" aria-live="polite"></section>
+
+        <!-- Event header -->
+        <section id="eventHeader" class="event-header" hidden>
+            <div class="event-hero">
+                <img id="eventImg" alt="" />
+            </div>
+
+            <div class="event-info">
+                <a class="backlink" href="./index.html">← Tilbage</a>
+                <h2 id="eventTitle" class="event-title"></h2>
+                <div id="eventMeta" class="meta"></div>
+                <p id="eventDesc" class="event-desc"></p>
+            </div>
+        </section>
+
+        <section class="section-head">
+            <h3>Opgaver</h3>
+            <p class="muted">Tryk “Tilmeld / læs mere” for at vælge et tidsrum.</p>
+        </section>
+
+        <section id="tasks" class="tasks"></section>
+    </main>
+
+    <script type="module" src="./js/event.js"></script>
+    <script type="module" src="/js/navbarAuth.js"></script>
+
+</body>
+
+</html>

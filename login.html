@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="da">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Log ind</title>
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+    <header>
+        <nav class="nav">
+            <div class="nav-inner">
+
+                <a href="/" class="logo">Valby IF</a>
+
+                <button class="nav-toggle" id="navToggle">☰</button>
+
+                <div class="nav-links" id="navLinks">
+
+                    <a href="/" class="nav-link">Forside</a>
+
+                    <a href="/profile.html" id="profileLink" class="nav-link hidden">
+                        Min side
+                    </a>
+
+                    <a href="/admin.html" id="adminLink" class="nav-link hidden">
+                        Admin
+                    </a>
+
+                    <a href="/login.html" id="loginLink" class="nav-link">
+                        Log ind
+                    </a>
+
+                    <button id="logoutBtn" class="nav-link hidden">
+                        Log ud
+                    </button>
+
+                </div>
+            </div>
+        </nav>
+
+    </header>
+    <main class="page-container" style="padding-top:48px; padding-bottom:48px;">
+        <section class="auth-card">
+            <div class="auth-head">
+                <h1 class="auth-title">Log ind</h1>
+                <p class="auth-sub">Log ind for at tilmelde dig opgaver og se dine tilmeldinger.</p>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <label class="auth-label">
+                    Email
+                    <input id="email" name="email" type="email" class="auth-input" autocomplete="email" required />
+                </label>
+
+                <label class="auth-label">
+                    Password
+                    <input id="password" name="password" type="password" class="auth-input"
+                        autocomplete="current-password" required />
+                </label>
+
+                <button class="auth-btn" type="submit">Log ind</button>
+
+                <p id="loginMsg" class="auth-msg" aria-live="polite"></p>
+            </form>
+
+            <div class="auth-foot">
+                <span class="muted">Har du ikke en bruger?</span>
+                <a class="auth-link" id="toSignup" href="/signup.html">Opret konto</a>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="/js/login.js"></script>
+    <script type="module" src="/js/navbarAuth.js"></script>
+
+</body>
+
+</html>
