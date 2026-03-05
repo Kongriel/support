@@ -39,7 +39,7 @@ export async function getEventById(eventId) {
 ------------------------------ */
 
 export async function listTasksForEvent(eventId) {
-  const { data, error } = await supabase.from("tasks").select("id,title,short_description,description,slug,event_id,created_at").eq("event_id", eventId).order("created_at", { ascending: true });
+  const { data, error } = await supabase.from("tasks").select("id,title,description,slug,event_id,created_at,is_hidden").eq("event_id", eventId).eq("is_hidden", false).order("created_at", { ascending: true });
 
   if (error) {
     console.error("listTasksForEvent error:", error);
@@ -243,4 +243,10 @@ export async function isAdmin() {
   const { data, error } = await supabase.rpc("is_admin");
   if (error) throw error;
   return !!data;
+}
+
+export async function getTaskById(id) {
+  const { data, error } = await supabase.from("tasks").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
 }
