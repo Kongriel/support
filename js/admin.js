@@ -613,6 +613,7 @@ function renderTaskEditor(slots, regsBySlot) {
               <th style="padding:8px;">Navn</th>
               <th style="padding:8px;">Email</th>
               <th style="padding:8px;">Telefon</th>
+              <th style="padding:8px;">Note</th>
             </tr>
           </thead>
           <tbody>
@@ -625,6 +626,7 @@ function renderTaskEditor(slots, regsBySlot) {
                       <td style="padding:8px;">${safe(r.name)}</td>
                       <td style="padding:8px;">${safe(r.email)}</td>
                       <td style="padding:8px;">${safe(r.phone || "")}</td>
+                      <td style="padding:8px;">${safe(r.note || "")}</td>
                     </tr>
                   `
                     )
@@ -830,3 +832,4 @@ document.getElementById("closePrint").onclick = () => {
 document.getElementById("printBtn").onclick = () => {
   window.print();
 };
+
