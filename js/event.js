@@ -53,29 +53,22 @@ function computeTaskAvailability(slots) {
   return { left, capacityTotal, registeredTotal };
 }
 
-function taskCardHtml(task, availability) {
-  const { left, capacityTotal } = availability;
-  const pillText = capacityTotal === 0 ? "Ingen tider" : `${left} ledige / ${capacityTotal}`;
+function taskCardHtml(task) {
+  const desc = task.short_description?.trim() ? task.short_description : excerpt(task.description, 160);
 
   return `
       <article class="task-card">
         <div class="task-top">
-          <div>
-            <h4 class="task-title">${task.title ?? "Uden titel"}</h4>
-          </div>
-          <div class="pill" title="Ledige pladser (summeret over alle tidsrum)">
-            ${pillText}
-          </div>
+          <h4 class="task-title">${safe(task.title)}</h4>
         </div>
   
         <p class="task-desc">
-  ${safe(task.short_description?.trim() ? task.short_description : excerpt(task.description, 140))}
-</p>
-
+          ${safe(desc)}
+        </p>
   
         <div class="task-actions">
-          <a class="button" href="./task.html?slug=${encodeURIComponent(task.slug)}">
-            Tilmeld / læs mere
+          <a class="event-btn" href="./task.html?slug=${encodeURIComponent(task.slug)}">
+            Tilmeld / Læs mere
           </a>
         </div>
       </article>
