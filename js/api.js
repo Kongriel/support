@@ -39,7 +39,7 @@ export async function getEventById(eventId) {
 ------------------------------ */
 
 export async function listTasksForEvent(eventId) {
-  const { data, error } = await supabase.from("tasks").select("id,title,description,slug,event_id,created_at,is_hidden").eq("event_id", eventId).eq("is_hidden", false).order("created_at", { ascending: true });
+  const { data, error } = await supabase.from("tasks").select("id,title,description,short_description,slug,event_id,created_at,is_hidden").eq("event_id", eventId).eq("is_hidden", false).order("created_at", { ascending: true });
 
   if (error) {
     console.error("listTasksForEvent error:", error);
@@ -214,6 +214,7 @@ export async function listRegistrationsForTask(taskId) {
         name: row.name,
         email: row.email,
         phone: row.phone,
+        note: row.note,
       });
     }
   }
@@ -250,3 +251,4 @@ export async function getTaskById(id) {
   if (error) throw error;
   return data;
 }
+
