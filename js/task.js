@@ -1,5 +1,6 @@
 import { getTaskBySlug, getEventById, listSlotsWithCountsForTask, registerForSlot } from "./api.js";
 import { requireUserOrRedirect } from "./session.js";
+import { supabase } from "./supabaseClient.js";
 
 const stateEl = document.getElementById("state");
 const pageEl = document.getElementById("taskPage");
@@ -35,6 +36,7 @@ function fmtDate(ts) {
 
 function humanError(msg) {
   const m = (msg || "").toLowerCase();
+  if (m.includes("duplicate key") || m.includes("uq_registrations_slot_email")) return "Du er allerede tilmeldt dette tidsrum.";
   if (m.includes("not authenticated")) return "Du skal være logget ind for at tilmelde dig.";
   if (m.includes("slot is full")) return "Det tidsrum er desværre fyldt op.";
   if (m.includes("already")) return "Du er allerede tilmeldt dette tidsrum.";
@@ -167,11 +169,15 @@ form.addEventListener("submit", async (e) => {
   submitBtn.textContent = "Tilmeld...";
 
   try {
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
     const payload = {
       slotId: selectedSlotId,
       name: nameEl.value.trim(),
-      phone: phoneEl.value.trim() || null,
-      note: noteEl.value.trim() || null,
+      email: user.email,
+      phone: phoneEl.value.trim(),
+      note: noteEl.value.trim(),
     };
 
     if (!payload.name) {
