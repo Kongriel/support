@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { isAdmin } from "./api.js";
+import { getTaskById } from "./api.js";
 
 async function requireAdminOrRedirect() {
   const { data } = await supabase.auth.getUser();
@@ -160,15 +161,20 @@ async function loadTasks() {
         .map((t) => {
           const reg = t.registered_total ?? 0;
           const cap = t.capacity_total ?? 0;
+
           const avail = t.available ?? Math.max(0, cap - reg);
 
           return `
-            <div class="row ${selectedTask?.id === t.id ? "active" : ""}" data-task="${t.id}">
+            <div class="row ${selectedTask?.id === t.id ? "active" : ""} ${t.is_hidden ? "is-hidden" : ""}" data-task="${t.id}">
               <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
                 <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${safe(t.title || "Uden titel")}
                 </div>
-                <div class="pill" title="Tilmeldte / pladser">${reg}/${cap}</div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  ${t.is_hidden ? `<span class="pill" style="opacity:.8;">Skjult</span>` : ""}
+  <div class="pill" title="Tilmeldte / pladser">${reg}/${cap}</div>
+
+</div>
               </div>
               <div class="muted" style="font-size:12px; margin-top:4px;">
                 ${avail} ledige
@@ -179,6 +185,8 @@ async function loadTasks() {
         .join("")
     : `<div class="muted">Ingen opgaver endnu.</div>`;
 }
+
+console.log("tasks sample:", currentTasks[0]);
 
 /* ---------------- DETAILS: Event editor OR Task editor ---------------- */
 async function loadDetails() {
@@ -406,6 +414,9 @@ function renderTaskEditor(slots, regsBySlot) {
       </div>
   
       <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+    <button id="t_toggle_visibility" class="button" type="button">
+  ${selectedTask.is_hidden ? "Gør synlig" : "Skjul opgave"}
+</button>
   <button id="taskPrintOverview" class="button" type="button">📄 Deltageroversigt</button>
   <button id="t_delete" class="button" type="button">Slet opgave</button>
   <span id="t_status" class="muted" style="align-self:center;"></span>
@@ -516,6 +527,28 @@ function renderTaskEditor(slots, regsBySlot) {
   const tDesc = document.getElementById("t_desc");
   const tStatus = document.getElementById("t_status");
   const tDelete = document.getElementById("t_delete");
+  const tToggle = document.getElementById("t_toggle_visibility");
+
+  tToggle.onclick = async () => {
+    try {
+      const newHidden = !selectedTask.is_hidden;
+
+      await updateTask(selectedTask.id, {
+        is_hidden: newHidden,
+      });
+
+      // 🔥 opdater lokal state så knappen husker status
+      selectedTask = {
+        ...selectedTask,
+        is_hidden: newHidden,
+      };
+
+      await loadTasks();
+      await loadDetails();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   tTitle.addEventListener("input", () => {
     if (!tSlug.value.trim()) tSlug.value = slugify(tTitle.value);
@@ -684,7 +717,8 @@ tasksEl.onclick = async (e) => {
   const id = e.target.closest("[data-task]")?.getAttribute("data-task");
   if (!id) return;
 
-  selectedTask = currentTasks.find((x) => x.id === id);
+  const t = currentTasks.find((x) => x.id === id);
+  selectedTask = await getTaskById(t.id); // ✅ henter is_hidden + alt andet frisk fra DB
 
   await loadTasks();
   await loadDetails();
