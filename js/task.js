@@ -19,6 +19,9 @@ const nameEl = document.getElementById("name");
 // emailEl findes måske stadig i HTML – vi bruger den ikke længere
 const emailEl = document.getElementById("email");
 const phoneEl = document.getElementById("phone");
+phoneEl?.addEventListener("input", () => {
+  phoneEl.value = phoneEl.value.replace(/\D/g, "");
+});
 const noteEl = document.getElementById("note");
 
 function getQueryParam(name) {
@@ -205,3 +208,4 @@ form.addEventListener("submit", async (e) => {
 });
 
 init();
+
