@@ -325,6 +325,7 @@ a {
   margin: 0;
   color: rgba(231, 238, 252, 0.8);
   line-height: 1.4;
+  max-width: 78ch;
 }
 
 .pill {
