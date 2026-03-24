@@ -58,25 +58,31 @@ function taskCardHtml(task) {
 
   const reg = task.registered_total ?? 0;
   const cap = task.capacity_total ?? 0;
+  const available = task.available ?? Math.max(0, cap - reg);
+  const isFull = available <= 0;
 
   return `
-    <article class="task-card">
-      <div class="task-top">
-        <h4 class="task-title">${safe(task.title)}</h4>
-        <div class="pill">${reg}/${cap} Tilmeldte</div>
-      </div>
-
-      <p class="task-desc">
-        ${safe(desc)}
-      </p>
-
-      <div class="task-actions">
-        <a class="event-btn" href="./task.html?slug=${encodeURIComponent(task.slug)}">
-          Tilmeld / Læs mere
-        </a>
-      </div>
-    </article>
-  `;
+      <article class="task-card ${isFull ? "task-card-full" : ""}">
+        <div class="task-top">
+          <h4 class="task-title">${safe(task.title)}</h4>
+  
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div class="pill">${reg}/${cap}</div>
+            ${isFull ? `<span class="pill">Fyldt</span>` : ""}
+          </div>
+        </div>
+  
+        <p class="task-desc">
+          ${safe(desc)}
+        </p>
+  
+        <div class="task-actions">
+          <a class="event-btn" href="./task.html?slug=${encodeURIComponent(task.slug)}">
+            Tilmeld / Læs mere
+          </a>
+        </div>
+      </article>
+    `;
 }
 
 async function init() {
@@ -115,7 +121,18 @@ async function init() {
       return;
     }
 
-    tasksEl.innerHTML = tasks.map(taskCardHtml).join("");
+    const sortedTasks = [...tasks].sort((a, b) => {
+      const aAvailable = a.available ?? (a.capacity_total ?? 0) - (a.registered_total ?? 0);
+      const bAvailable = b.available ?? (b.capacity_total ?? 0) - (b.registered_total ?? 0);
+
+      const aFull = aAvailable <= 0;
+      const bFull = bAvailable <= 0;
+
+      if (aFull === bFull) return 0;
+      return aFull ? 1 : -1; // fyldte nederst
+    });
+
+    tasksEl.innerHTML = sortedTasks.map(taskCardHtml).join("");
     stateEl.textContent = "";
   } catch (err) {
     console.error(err);
