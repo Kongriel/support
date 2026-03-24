@@ -1052,3 +1052,12 @@ body.admin-ok #loginOverlay {
 #tasks .row.is-hidden:hover {
   opacity: 0.75;
 }
+
+.task-card-full {
+  opacity: 0.65;
+}
+
+.task-card-full .pill {
+  background: rgba(255, 80, 80, 0.15);
+  border-color: rgba(255, 80, 80, 0.4);
+}
