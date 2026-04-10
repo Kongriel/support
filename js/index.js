@@ -49,8 +49,84 @@ function parseEventDateLocal(dateStr) {
 }
 
 /* ---------- Count-up “dage til næste event” ---------- */
+
+const todayMessages = ["Wup Wup! Det sker i dag! 🎉", "Opvisningsdag day baby! 🚀", "Let’s gooo – det er i dag! ⚡", "I dag går det ned! 😎", "Dagen er kommet – vi ses derude! ✨"];
+
+function getRandomTodayMessage() {
+  return todayMessages[Math.floor(Math.random() * todayMessages.length)];
+}
+
+function launchConfetti() {
+  const existing = document.querySelector(".confetti-layer");
+  if (existing) existing.remove();
+
+  const layer = document.createElement("div");
+  layer.className = "confetti-layer";
+  document.body.appendChild(layer);
+
+  const colors = ["#ff4d6d", "#ffd166", "#06d6a0", "#118ab2", "#8338ec", "#ff9f1c"];
+
+  for (let i = 0; i < 120; i++) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.left = `${Math.random() * 100}vw`;
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = `${2.5 + Math.random() * 2}s`;
+    piece.style.animationDelay = `${Math.random() * 0.6}s`;
+    piece.style.transform = `translateY(-20px) rotate(${Math.random() * 360}deg)`;
+    piece.style.opacity = `${0.7 + Math.random() * 0.3}`;
+    piece.style.width = `${6 + Math.random() * 6}px`;
+    piece.style.height = `${10 + Math.random() * 8}px`;
+    layer.appendChild(piece);
+  }
+
+  setTimeout(() => {
+    layer.remove();
+  }, 5000);
+}
+
+function ensureConfettiStyles() {
+  if (document.getElementById("confetti-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "confetti-styles";
+  style.textContent = `
+      .confetti-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 9999;
+      }
+  
+      .confetti-piece {
+        position: absolute;
+        top: -20px;
+        border-radius: 2px;
+        animation-name: confettiFall;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
+        will-change: transform, opacity;
+      }
+  
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(-20px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(110vh) rotate(720deg);
+          opacity: 0;
+        }
+      }
+    `;
+  document.head.appendChild(style);
+}
+
 function animateCountUpDays(targetDays, labelText = "dage til næste event") {
   if (!countdownTitle) return;
+
+  ensureConfettiStyles();
 
   // Edge cases
   if (!Number.isFinite(targetDays) || targetDays < 0) {
@@ -60,11 +136,12 @@ function animateCountUpDays(targetDays, labelText = "dage til næste event") {
 
   // If 0 days, show instantly
   if (targetDays === 0) {
-    countdownTitle.textContent = `0 ${labelText}`;
+    countdownTitle.textContent = getRandomTodayMessage();
+    launchConfetti();
     return;
   }
 
-  const durationMs = Math.min(1200, 300 + targetDays * 40); // feels snappy for small, not too slow for big
+  const durationMs = Math.min(1200, 300 + targetDays * 40);
   const start = 0;
   const end = targetDays;
 
@@ -74,15 +151,23 @@ function animateCountUpDays(targetDays, labelText = "dage til næste event") {
     return 1 - Math.pow(1 - t, 3);
   }
 
+  function format(value) {
+    if (value === 1) return "1 dag til næste event";
+    return `${value} ${labelText}`;
+  }
+
   function frame(now) {
     const t = Math.min(1, (now - t0) / durationMs);
     const eased = easeOutCubic(t);
     const value = Math.max(start, Math.min(end, Math.round(start + (end - start) * eased)));
 
-    countdownTitle.textContent = `${value} ${labelText}`;
+    countdownTitle.textContent = format(value);
 
-    if (t < 1) requestAnimationFrame(frame);
-    else countdownTitle.textContent = `${end} ${labelText}`; // ensure exact final
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      countdownTitle.textContent = format(end);
+    }
   }
 
   requestAnimationFrame(frame);
@@ -91,13 +176,22 @@ function animateCountUpDays(targetDays, labelText = "dage til næste event") {
 function startDaysToNextEvent(events) {
   if (!countdownTitle) return;
 
+  ensureConfettiStyles();
+
   function computeTarget() {
     const now = new Date();
 
+    // Ignorér klokkeslæt → hele dagen tæller som "i dag"
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const upcoming = (events || [])
       .filter((e) => e.date)
-      .map((e) => ({ ...e, _dateObj: parseEventDateLocal(e.date) }))
-      .filter((e) => e._dateObj.getTime() >= now.getTime())
+      .map((e) => {
+        const d = parseEventDateLocal(e.date);
+        const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return { ...e, _dateObj: dMidnight };
+      })
+      .filter((e) => e._dateObj.getTime() >= today.getTime())
       .sort((a, b) => a._dateObj - b._dateObj)[0];
 
     if (!upcoming) {
@@ -106,8 +200,8 @@ function startDaysToNextEvent(events) {
       return null;
     }
 
-    const diffMs = upcoming._dateObj.getTime() - now.getTime();
-    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24)); // 1..N
+    const diffMs = upcoming._dateObj.getTime() - today.getTime();
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
     if (countdownSub) {
       countdownSub.textContent = upcoming.title ? `Næste event: ${upcoming.title}` : "";
@@ -116,12 +210,10 @@ function startDaysToNextEvent(events) {
     return { days, upcoming };
   }
 
-  // First render: count UP from 0 to the correct number
+  // First render
   const first = computeTarget();
   if (first) animateCountUpDays(first.days);
 
-  // Update later (no animation needed every second)
-  // We'll recompute once per hour; if the number changes, we animate again.
   let lastDays = first?.days ?? null;
 
   setInterval(() => {
@@ -132,7 +224,13 @@ function startDaysToNextEvent(events) {
       lastDays = res.days;
       animateCountUpDays(res.days);
     } else {
-      countdownTitle.textContent = `${res.days} dage til næste event`;
+      if (res.days === 0) {
+        countdownTitle.textContent = getRandomTodayMessage();
+      } else if (res.days === 1) {
+        countdownTitle.textContent = "1 dag til næste event";
+      } else {
+        countdownTitle.textContent = `${res.days} dage til næste event`;
+      }
     }
   }, 1000 * 60 * 60);
 }
