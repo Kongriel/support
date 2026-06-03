@@ -10,7 +10,8 @@ function setMsg(text, type = "") {
 }
 
 function getBaseUrl() {
-  return window.location.origin;
+  return "https://vif-support.vercel.app";
+  // Skift til "https://www.vifsupport.dk" når domænet er klar
 }
 
 form.addEventListener("submit", async (e) => {
