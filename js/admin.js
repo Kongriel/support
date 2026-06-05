@@ -21,7 +21,7 @@ async function requireAdminOrRedirect() {
   return true;
 }
 
-import { listEvents, createEvent, updateEvent, uploadEventCover, getPublicImageUrl, deleteEvent, listTasksWithCountsForEvent, createTask, updateTask, deleteTask, listSlotsForTask, createSlot, deleteSlot, listRegistrationsForTask, deleteRegistration } from "./api.js";
+import { listEvents, getEventUserOverview, createEvent, updateEvent, uploadEventCover, getPublicImageUrl, deleteEvent, listTasksWithCountsForEvent, createTask, updateTask, deleteTask, listSlotsForTask, createSlot, updateSlot, deleteSlot, listRegistrationsForTask, deleteRegistration } from "./api.js";
 
 /* ---------------- DEV ADMIN LOGIN (UI gate) ---------------- */
 const DEV_ADMIN_EMAIL = "valby@if.dk";
@@ -99,6 +99,26 @@ function fmtDatePretty(ts) {
   });
 }
 
+function formatHours(n) {
+  const hours = Number(n || 0);
+  return hours.toLocaleString("da-DK", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
+}
+
+function fmtDateTimePretty(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+
+  return d.toLocaleString("da-DK", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 // input type="datetime-local" expects YYYY-MM-DDTHH:mm
 function toDatetimeLocalValue(ts) {
   const d = new Date(ts);
@@ -138,7 +158,7 @@ async function loadEvents() {
           <div class="row ${selectedEvent?.id === e.id ? "active" : ""}" data-ev="${e.id}">
             ${safe(e.title || "Uden titel")}
           </div>
-        `
+        `,
         )
         .join("")
     : `<div class="muted">Ingen events endnu.</div>`;
@@ -374,6 +394,7 @@ function renderEventEditor() {
     await loadEvents();
     await loadTasks();
     await loadDetails();
+    await loadEventOverview();
   };
 }
 
@@ -382,127 +403,195 @@ function renderTaskEditor(slots, regsBySlot) {
   const regsFlat = regsBySlot.flatMap((s) => s.registrations || []);
 
   detailsEl.innerHTML = `
-      <h3 style="margin-top:0;">Opgave</h3>
-  
-      <div class="admin-row">
-        <div class="left" style="width:100%;">
-          <div class="sub">Titel</div>
-          <input id="t_title" class="input" value="${safe(selectedTask.title || "")}" />
-        </div>
-      </div>
-  
-      <div class="admin-row">
-        <div class="left" style="width:100%;">
-          <div class="sub">Slug</div>
-          <input id="t_slug" class="input" value="${safe(selectedTask.slug || "")}" />
-        </div>
-      </div>
+    <h3 style="margin-top:0;">Opgave</h3>
 
-      <div class="admin-row">
-  <div class="left" style="width:100%;">
-    <div class="sub">Kort beskrivelse (kort-visning)</div>
-    <textarea id="t_short_desc" class="input" rows="2">${safe(selectedTask.short_description || "")}</textarea>
-  </div>
-</div>
-
-  
-      <div class="admin-row">
-        <div class="left" style="width:100%;">
-          <div class="sub">Beskrivelse</div>
-          <textarea id="t_desc" class="input" rows="4">${safe(selectedTask.description || "")}</textarea>
-        </div>
+    <div class="admin-row">
+      <div class="left" style="width:100%;">
+        <div class="sub">Titel</div>
+        <input id="t_title" class="input" value="${safe(selectedTask.title || "")}" />
       </div>
-  
-      <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-    <button id="t_toggle_visibility" class="button" type="button">
-  ${selectedTask.is_hidden ? "Gør synlig" : "Skjul opgave"}
-</button>
-  <button id="taskPrintOverview" class="button" type="button">📄 Deltageroversigt</button>
-  <button id="t_delete" class="button" type="button">Slet opgave</button>
-  <span id="t_status" class="muted" style="align-self:center;"></span>
-</div>
+    </div>
 
-  
-      <hr class="admin-hr"/>
-  
-      <h4 style="margin:0 0 10px;">Tidsrum</h4>
-  
-      <form id="slotForm" class="form" style="margin-bottom:10px;">
-        <label class="label">Start (dato+tid)
-          <input id="slotStart" type="datetime-local" class="input" required />
-        </label>
-  
-        <label class="label">Slut (dato+tid)
-          <input id="slotEnd" type="datetime-local" class="input" required />
-        </label>
-  
-        <label class="label">Pladser (capacity)
-          <input id="slotCap" type="number" min="1" value="2" class="input" required />
-        </label>
-  
-        <button class="button" type="submit">+ Tilføj tidsrum</button>
-        <div id="slotMsg" class="form-msg" aria-live="polite"></div>
-      </form>
-  
-      <div class="admin-list" id="slotsList">
-        ${
-          slots.length
-            ? slots
-                .map(
-                  (s) => `
-                <div class="admin-row">
-                  <div class="left">
-                    <div class="title">${fmtTime(s.start_time)}–${fmtTime(s.end_time)}</div>
-                    <div class="sub">${fmtDatePretty(s.start_time)} · capacity: ${s.capacity}</div>
-                  </div>
-                  <button class="button" type="button" data-del-slot="${s.id}">Slet</button>
-                </div>
-              `
-                )
-                .join("")
-            : `<div class="muted">Ingen tidsrum endnu.</div>`
-        }
+    <div class="admin-row">
+      <div class="left" style="width:100%;">
+        <div class="sub">Slug</div>
+        <input id="t_slug" class="input" value="${safe(selectedTask.slug || "")}" />
       </div>
-  
-      <hr class="admin-hr"/>
-  
-      <h4 style="margin:0 0 10px;">Tilmeldinger</h4>
-  
+    </div>
+
+    <div class="admin-row">
+      <div class="left" style="width:100%;">
+        <div class="sub">Kort beskrivelse (kort-visning)</div>
+        <textarea id="t_short_desc" class="input" rows="2">${safe(selectedTask.short_description || "")}</textarea>
+      </div>
+    </div>
+
+    <div class="admin-row">
+      <div class="left" style="width:100%;">
+        <div class="sub">Beskrivelse</div>
+        <textarea id="t_desc" class="input" rows="4">${safe(selectedTask.description || "")}</textarea>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+      <button id="t_toggle_visibility" class="button" type="button">
+        ${selectedTask.is_hidden ? "Gør synlig" : "Skjul opgave"}
+      </button>
+
+      <button id="taskPrintOverview" class="button" type="button">
+        📄 Deltageroversigt
+      </button>
+
+      <button id="t_delete" class="button" type="button">
+        Slet opgave
+      </button>
+
+      <span id="t_status" class="muted" style="align-self:center;"></span>
+    </div>
+
+    <hr class="admin-hr"/>
+
+    <h4 style="margin:0 0 10px;">Tidsrum</h4>
+
+    <form id="slotForm" class="form" style="margin-bottom:10px;">
+      <label class="label">Start (dato+tid)
+        <input id="slotStart" type="datetime-local" class="input" required />
+      </label>
+
+      <label class="label">Slut (dato+tid)
+        <input id="slotEnd" type="datetime-local" class="input" required />
+      </label>
+
+      <label class="label">Pladser
+        <input id="slotCap" type="number" min="1" value="2" class="input" required />
+      </label>
+
+      <button class="button" type="submit">+ Tilføj tidsrum</button>
+      <div id="slotMsg" class="form-msg" aria-live="polite"></div>
+    </form>
+
+    <div class="admin-list" id="slotsList">
       ${
-        regsFlat.length
-          ? regsBySlot
+        slots.length
+          ? slots
               .map((s) => {
-                const regs = s.registrations || [];
+                const regsOnSlot = regsBySlot.find((x) => x.id === s.id)?.registrations?.length ?? 0;
+
                 return `
+                  <div class="admin-row">
+                    <div class="left" style="width:100%;">
+                      <div class="title">${fmtTime(s.start_time)}–${fmtTime(s.end_time)}</div>
+                      <div class="sub">
+                        ${fmtDatePretty(s.start_time)} · ${regsOnSlot} tilmeldt · cap ${s.capacity}
+                      </div>
+
+                      <details style="margin-top:10px;">
+                        <summary style="cursor:pointer; color:var(--muted); font-size:13px;">
+                          Rediger tidsrum
+                        </summary>
+
+                        <div style="display:grid; gap:8px; margin-top:10px;">
+                          <label class="label">
+                            Start
+                            <input
+                              class="input"
+                              type="datetime-local"
+                              data-slot-start="${s.id}"
+                              value="${toDatetimeLocalValue(s.start_time)}"
+                            />
+                          </label>
+
+                          <label class="label">
+                            Slut
+                            <input
+                              class="input"
+                              type="datetime-local"
+                              data-slot-end="${s.id}"
+                              value="${toDatetimeLocalValue(s.end_time)}"
+                            />
+                          </label>
+
+                          <label class="label">
+                            Pladser
+                            <input
+                              class="input"
+                              type="number"
+                              min="1"
+                              data-slot-cap="${s.id}"
+                              value="${s.capacity}"
+                            />
+                          </label>
+
+                          <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                            <button class="button" type="button" data-save-slot="${s.id}">
+                              Gem ændringer
+                            </button>
+
+                            <button class="button" type="button" data-del-slot="${s.id}">
+                              Slet
+                            </button>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")
+          : `<div class="muted">Ingen tidsrum endnu.</div>`
+      }
+    </div>
+
+    <hr class="admin-hr"/>
+
+    <h4 style="margin:0 0 10px;">Tilmeldinger</h4>
+
+    ${
+      regsFlat.length
+        ? regsBySlot
+            .map((s) => {
+              const regs = s.registrations || [];
+
+              return `
                 <div class="admin-row">
                   <div class="left">
                     <div class="title">${fmtTime(s.start_time)}–${fmtTime(s.end_time)}</div>
                     <div class="sub">${fmtDatePretty(s.start_time)} · ${regs.length} tilmeldt · cap ${s.capacity}</div>
                   </div>
                 </div>
+
                 ${
                   regs.length
                     ? regs
                         .map(
                           (r) => `
-                        <div class="admin-row">
-                          <div class="left">
-                            <div class="title">${safe(r.name)} <span class="muted" style="font-weight:400;">(${safe(r.email)})</span></div>
-                            <div class="sub">${safe(r.phone || "")} ${r.note ? "· " + safe(r.note) : ""}</div>
-                          </div>
-                          <button class="button" type="button" data-del-reg="${r.id}">Slet</button>
-                        </div>
-                      `
+                            <div class="admin-row">
+                              <div class="left">
+                                <div class="title">
+                                  ${safe(r.name)}
+                                  <span class="muted" style="font-weight:400;">(${safe(r.email)})</span>
+                                </div>
+                                <div class="sub">
+                                  ${safe(r.phone || "")}
+                                  ${r.note ? " · " + safe(r.note) : ""}
+                                </div>
+                              </div>
+
+                              <button class="button" type="button" data-del-reg="${r.id}">
+                                Slet
+                              </button>
+                            </div>
+                          `,
                         )
                         .join("")
                     : `<div class="muted" style="margin:0 0 12px;">Ingen tilmeldinger på dette tidsrum.</div>`
                 }
               `;
-              })
-              .join("")
-          : `<div class="muted">Ingen tilmeldinger.</div>`
-      }
-    `;
+            })
+            .join("")
+        : `<div class="muted">Ingen tilmeldinger.</div>`
+    }
+  `;
 
   // Prefill slot times: next whole hour + 1 hour
   const now = new Date();
@@ -523,7 +612,6 @@ function renderTaskEditor(slots, regsBySlot) {
   const tTitle = document.getElementById("t_title");
   const tSlug = document.getElementById("t_slug");
   const tShortDesc = document.getElementById("t_short_desc");
-
   const tDesc = document.getElementById("t_desc");
   const tStatus = document.getElementById("t_status");
   const tDelete = document.getElementById("t_delete");
@@ -537,7 +625,6 @@ function renderTaskEditor(slots, regsBySlot) {
         is_hidden: newHidden,
       });
 
-      // 🔥 opdater lokal state så knappen husker status
       selectedTask = {
         ...selectedTask,
         is_hidden: newHidden,
@@ -557,6 +644,7 @@ function renderTaskEditor(slots, regsBySlot) {
   const saveTask = debounce(async () => {
     try {
       tStatus.textContent = "Gemmer...";
+
       const patch = {
         title: tTitle.value.trim(),
         slug: tSlug.value.trim(),
@@ -565,26 +653,33 @@ function renderTaskEditor(slots, regsBySlot) {
       };
 
       const updated = await updateTask(selectedTask.id, patch);
-      // NOTE: updateTask returnerer ikke counts, men det er ok
+
       selectedTask = { ...selectedTask, ...updated };
       tStatus.textContent = "✅ Gemt";
-      await loadTasks(); // så midterkolonnen opdaterer titel og counts
+
+      await loadTasks();
     } catch (err) {
       tStatus.textContent = "❌ Fejl";
       alert(err.message);
     }
   }, 500);
 
-  [tTitle, tSlug, tShortDesc, tDesc].forEach((el) => el.addEventListener("input", saveTask));
+  [tTitle, tSlug, tShortDesc, tDesc].forEach((el) => {
+    el.addEventListener("input", saveTask);
+  });
 
   tDelete.onclick = async () => {
     if (!confirm("Slet opgaven? (tidsrum + tilmeldinger slettes også)")) return;
+
     await deleteTask(selectedTask.id);
+
     selectedTask = null;
+
     await loadTasks();
     await loadDetails();
   };
 
+  // Print overview
   const printBtn = document.getElementById("taskPrintOverview");
 
   printBtn.onclick = async () => {
@@ -594,51 +689,53 @@ function renderTaskEditor(slots, regsBySlot) {
     const regsBySlotFresh = await listRegistrationsForTask(selectedTask.id);
 
     content.innerHTML = `
-    <h1 style="margin-bottom:6px;">${safe(selectedTask.title)}</h1>
-    <p style="margin-top:0;">${safe(selectedTask.description || "")}</p>
-    <hr/>
-    ${regsBySlotFresh
-      .map((slot) => {
-        const regs = slot.registrations || [];
+      <h1 style="margin-bottom:6px;">${safe(selectedTask.title)}</h1>
+      <p style="margin-top:0;">${safe(selectedTask.description || "")}</p>
+      <hr/>
 
-        return `
-        <h3 style="margin-top:30px;">
-          ${fmtDatePretty(slot.start_time)} 
-          ${fmtTime(slot.start_time)}–${fmtTime(slot.end_time)}
-        </h3>
+      ${regsBySlotFresh
+        .map((slot) => {
+          const regs = slot.registrations || [];
 
-        <table style="width:100%; border-collapse:collapse; margin-top:10px;" border="1">
-          <thead>
-            <tr>
-              <th style="padding:8px;">Navn</th>
-              <th style="padding:8px;">Email</th>
-              <th style="padding:8px;">Telefon</th>
-              <th style="padding:8px;">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              regs.length
-                ? regs
-                    .map(
-                      (r) => `
-                    <tr>
-                      <td style="padding:8px;">${safe(r.name)}</td>
-                      <td style="padding:8px;">${safe(r.email)}</td>
-                      <td style="padding:8px;">${safe(r.phone || "")}</td>
-                      <td style="padding:8px;">${safe(r.note || "")}</td>
-                    </tr>
-                  `
-                    )
-                    .join("")
-                : `<tr><td colspan="3" style="padding:8px;">Ingen tilmeldinger</td></tr>`
-            }
-          </tbody>
-        </table>
-      `;
-      })
-      .join("")}
-  `;
+          return `
+            <h3 style="margin-top:30px;">
+              ${fmtDatePretty(slot.start_time)}
+              ${fmtTime(slot.start_time)}–${fmtTime(slot.end_time)}
+            </h3>
+
+            <table style="width:100%; border-collapse:collapse; margin-top:10px;" border="1">
+              <thead>
+                <tr>
+                  <th style="padding:8px;">Navn</th>
+                  <th style="padding:8px;">Email</th>
+                  <th style="padding:8px;">Telefon</th>
+                  <th style="padding:8px;">Note</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${
+                  regs.length
+                    ? regs
+                        .map(
+                          (r) => `
+                            <tr>
+                              <td style="padding:8px;">${safe(r.name)}</td>
+                              <td style="padding:8px;">${safe(r.email)}</td>
+                              <td style="padding:8px;">${safe(r.phone || "")}</td>
+                              <td style="padding:8px;">${safe(r.note || "")}</td>
+                            </tr>
+                          `,
+                        )
+                        .join("")
+                    : `<tr><td colspan="4" style="padding:8px;">Ingen tilmeldinger</td></tr>`
+                }
+              </tbody>
+            </table>
+          `;
+        })
+        .join("")}
+    `;
 
     modal.classList.remove("hidden");
   };
@@ -646,6 +743,7 @@ function renderTaskEditor(slots, regsBySlot) {
   // Create custom slot
   slotForm.onsubmit = async (e) => {
     e.preventDefault();
+
     slotMsg.textContent = "";
     slotMsg.classList.remove("ok", "err");
 
@@ -655,11 +753,14 @@ function renderTaskEditor(slots, regsBySlot) {
       const capVal = Number(slotCap.value);
 
       if (!startVal || !endVal) throw new Error("Vælg start og slut.");
-      if (!capVal || capVal < 1) throw new Error("Capacity skal være mindst 1.");
+      if (!capVal || capVal < 1) throw new Error("Pladser skal være mindst 1.");
 
       const startISO = new Date(startVal).toISOString();
       const endISO = new Date(endVal).toISOString();
-      if (new Date(endISO) <= new Date(startISO)) throw new Error("Slut skal være efter start.");
+
+      if (new Date(endISO) <= new Date(startISO)) {
+        throw new Error("Slut skal være efter start.");
+      }
 
       await createSlot({
         task_id: selectedTask.id,
@@ -672,31 +773,80 @@ function renderTaskEditor(slots, regsBySlot) {
       slotMsg.classList.add("ok");
 
       await loadDetails();
-      await loadTasks(); // counts kan ændre sig hvis du har cap_total
+      await loadTasks();
     } catch (err) {
       slotMsg.textContent = "❌ " + err.message;
       slotMsg.classList.add("err");
     }
   };
 
-  // Delete slot / delete registration (event delegation)
+  // Save slot / delete slot / delete registration
   detailsEl.onclick = async (e) => {
+    const saveSlot = e.target.closest("[data-save-slot]")?.getAttribute("data-save-slot");
     const delSlot = e.target.closest("[data-del-slot]")?.getAttribute("data-del-slot");
     const delReg = e.target.closest("[data-del-reg]")?.getAttribute("data-del-reg");
 
+    if (saveSlot) {
+      try {
+        const startInput = detailsEl.querySelector(`[data-slot-start="${saveSlot}"]`);
+        const endInput = detailsEl.querySelector(`[data-slot-end="${saveSlot}"]`);
+        const capInput = detailsEl.querySelector(`[data-slot-cap="${saveSlot}"]`);
+
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+        const capVal = Number(capInput.value);
+
+        if (!startVal || !endVal) throw new Error("Vælg start og slut.");
+        if (!capVal || capVal < 1) throw new Error("Pladser skal være mindst 1.");
+
+        const regsOnSlot = regsBySlot.find((s) => s.id === saveSlot)?.registrations?.length ?? 0;
+
+        if (capVal < regsOnSlot) {
+          throw new Error(`Du kan ikke sætte pladser lavere end antal tilmeldte (${regsOnSlot}).`);
+        }
+
+        const startISO = new Date(startVal).toISOString();
+        const endISO = new Date(endVal).toISOString();
+
+        if (new Date(endISO) <= new Date(startISO)) {
+          throw new Error("Slut skal være efter start.");
+        }
+
+        await updateSlot(saveSlot, {
+          start_time: startISO,
+          end_time: endISO,
+          capacity: capVal,
+        });
+
+        await loadDetails();
+        await loadTasks();
+
+        return;
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+    }
+
     if (delSlot) {
       if (!confirm("Slet dette tidsrum? (tilmeldinger på det slettes også)")) return;
+
       await deleteSlot(delSlot);
+
       await loadDetails();
       await loadTasks();
+
       return;
     }
 
     if (delReg) {
       if (!confirm("Slet denne tilmelding?")) return;
+
       await deleteRegistration(delReg);
+
       await loadDetails();
-      await loadTasks(); // counts opdateres
+      await loadTasks();
+
       return;
     }
   };
@@ -713,6 +863,7 @@ eventsEl.onclick = async (e) => {
   await loadEvents();
   await loadTasks();
   await loadDetails();
+  await loadEventOverview();
 };
 
 tasksEl.onclick = async (e) => {
@@ -746,6 +897,7 @@ addEventBtn.onclick = async () => {
     await loadEvents();
     await loadTasks();
     await loadDetails();
+    await loadEventOverview();
   } catch (err) {
     showError(err);
     alert(err.message);
@@ -790,6 +942,7 @@ loginForm.addEventListener("submit", async (e) => {
       await loadEvents();
       await loadTasks();
       await loadDetails();
+      await loadEventOverview();
     } catch (err) {
       showError(err);
     }
@@ -809,6 +962,119 @@ logoutBtn?.addEventListener("click", () => {
   detailsEl.innerHTML = "";
 });
 
+async function loadEventOverview() {
+  const overviewEl = document.getElementById("overviewContent");
+  if (!overviewEl) return;
+
+  if (!selectedEvent) {
+    overviewEl.innerHTML = `<p class="muted">Vælg et event for at se overblik.</p>`;
+    return;
+  }
+
+  try {
+    const [tasks, users] = await Promise.all([listTasksWithCountsForEvent(selectedEvent.id), getEventUserOverview(selectedEvent.id)]);
+
+    const visibleTasks = tasks.filter((t) => !t.is_hidden);
+
+    const taskCount = visibleTasks.length;
+    const capacityTotal = visibleTasks.reduce((sum, t) => sum + (t.capacity_total ?? 0), 0);
+    const registeredTotal = visibleTasks.reduce((sum, t) => sum + (t.registered_total ?? 0), 0);
+    const missingTotal = Math.max(0, capacityTotal - registeredTotal);
+    const percent = capacityTotal > 0 ? Math.round((registeredTotal / capacityTotal) * 100) : 0;
+
+    overviewEl.innerHTML = `
+      <div class="overview-grid">
+        <div class="overview-donut-wrap">
+          <div class="overview-donut" style="--percent:${percent};">
+            <div class="overview-donut-center">
+              <div>
+                <span>${percent}%</span>
+                <small>fyldt</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-stats">
+          <div class="overview-stat">
+            <strong>${taskCount}</strong>
+            <span>synlige opgaver</span>
+          </div>
+
+          <div class="overview-stat">
+            <strong>${registeredTotal}</strong>
+            <span>tilmeldte pladser</span>
+          </div>
+
+          <div class="overview-stat">
+            <strong>${missingTotal}</strong>
+            <span>mangler at blive taget</span>
+          </div>
+
+          <div class="overview-stat">
+            <strong>${capacityTotal}</strong>
+            <span>pladser i alt</span>
+          </div>
+        </div>
+      </div>
+
+      <details class="user-overview">
+        <summary>Brugeroversigt (${users.length})</summary>
+
+        ${
+          users.length
+            ? `
+              <div class="user-list">
+                ${users
+                  .map((u) => {
+                    const regs = Array.isArray(u.registrations) ? u.registrations : [];
+
+                    return `
+                      <div class="user-card">
+                        <div class="user-card-head">
+                          <div>
+                            <div class="user-card-title">${safe(u.name || "Uden navn")}</div>
+                            <div class="user-card-sub">${safe(u.email || "")}</div>
+                          </div>
+
+                          <div class="user-meta">
+                            <span class="pill">${u.task_count ?? 0} opgaver</span>
+                            <span class="pill">${formatHours(u.total_hours)} timer</span>
+                          </div>
+                        </div>
+
+                        <details style="margin-top:10px;">
+                          <summary class="muted" style="cursor:pointer;">Se opgaver</summary>
+
+                          <div class="user-detail-list">
+                            ${regs
+                              .map(
+                                (r) => `
+                                  <div class="user-detail-item">
+                                    <strong>${safe(r.task_title)}</strong>
+                                    · ${fmtDateTimePretty(r.start_time)}–${fmtTime(r.end_time)}
+                                  </div>
+                                `,
+                              )
+                              .join("")}
+                          </div>
+                        </details>
+                      </div>
+                    `;
+                  })
+                  .join("")}
+              </div>
+            `
+            : `<p class="muted">Ingen brugere har tilmeldt sig endnu.</p>`
+        }
+      </details>
+    `;
+  } catch (err) {
+    console.error(err);
+    overviewEl.innerHTML = `<p class="muted">Kunne ikke hente event-overblik.</p>`;
+  }
+}
+
 /* ---------------- Init ---------------- */
 (async function init() {
   try {
@@ -820,6 +1086,7 @@ logoutBtn?.addEventListener("click", () => {
     await loadEvents();
     await loadTasks();
     await loadDetails();
+    await loadEventOverview();
   } catch (err) {
     showError(err);
   }
@@ -832,4 +1099,3 @@ document.getElementById("closePrint").onclick = () => {
 document.getElementById("printBtn").onclick = () => {
   window.print();
 };
-
