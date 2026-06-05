@@ -56,6 +56,13 @@ export async function getTaskBySlug(slug) {
   return data;
 }
 
+export async function getTaskById(id) {
+  const { data, error } = await supabase.from("tasks").select("*").eq("id", id).single();
+
+  if (error) throw error;
+  return data;
+}
+
 /* -----------------------------
    COUNTS (RPC)
 ------------------------------ */
@@ -105,6 +112,19 @@ export async function registerForSlot({ slotId, name, phone, note }) {
 }
 
 /* -----------------------------
+   EMAILS (Edge Functions)
+------------------------------ */
+
+export async function sendRegistrationEmail(registrationId) {
+  const { data, error } = await supabase.functions.invoke("send-registration-email", {
+    body: { registrationId },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/* -----------------------------
    IMAGES (Storage)
 ------------------------------ */
 
@@ -146,6 +166,7 @@ export async function updateEvent(id, patch) {
 
 export async function deleteEvent(id) {
   const { error } = await supabase.from("events").delete().eq("id", id);
+
   if (error) throw error;
 }
 
@@ -165,6 +186,7 @@ export async function updateTask(id, patch) {
 
 export async function deleteTask(id) {
   const { error } = await supabase.from("tasks").delete().eq("id", id);
+
   if (error) throw error;
 }
 
@@ -181,9 +203,16 @@ export async function createSlot(payload) {
   if (error) throw error;
   return data;
 }
+export async function updateSlot(id, patch) {
+  const { data, error } = await supabase.from("task_slots").update(patch).eq("id", id).select("*").single();
+
+  if (error) throw error;
+  return data;
+}
 
 export async function deleteSlot(id) {
   const { error } = await supabase.from("task_slots").delete().eq("id", id);
+
   if (error) throw error;
 }
 
@@ -194,7 +223,6 @@ export async function listRegistrationsForTask(taskId) {
 
   if (error) throw error;
 
-  // Gruppér tilbage til samme format som admin.js forventer: slots[] med registrations[]
   const bySlot = new Map();
 
   for (const row of data || []) {
@@ -224,31 +252,40 @@ export async function listRegistrationsForTask(taskId) {
 
 export async function deleteRegistration(id) {
   const { error } = await supabase.from("registrations").delete().eq("id", id);
+
   if (error) throw error;
 }
 
 export async function listMyRegistrations() {
   const { data, error } = await supabase.rpc("get_my_registrations");
+
   if (error) throw error;
   return data || [];
 }
 
 export async function cancelMyRegistration(registrationId) {
-  // RLS sørger for at man kun kan slette sin egen
   const { error } = await supabase.from("registrations").delete().eq("id", registrationId);
 
   if (error) throw error;
 }
 
+/* -----------------------------
+   ADMIN
+------------------------------ */
+
 export async function isAdmin() {
   const { data, error } = await supabase.rpc("is_admin");
+
   if (error) throw error;
   return !!data;
 }
 
-export async function getTaskById(id) {
-  const { data, error } = await supabase.from("tasks").select("*").eq("id", id).single();
+export async function getEventUserOverview(eventId) {
+  const { data, error } = await supabase.rpc("get_event_user_overview", {
+    p_event_id: eventId,
+  });
+
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
