@@ -20,7 +20,14 @@ body {
 }
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial;
   background: var(--bg);
   color: var(--text);
 }
@@ -421,7 +428,9 @@ a {
 
 .slot.selected {
   border-color: rgba(102, 178, 255, 0.55);
-  box-shadow: 0 0 0 2px rgba(102, 178, 255, 0.15), var(--shadow);
+  box-shadow:
+    0 0 0 2px rgba(102, 178, 255, 0.15),
+    var(--shadow);
 }
 
 .form-card {
@@ -713,7 +722,10 @@ body.admin-ok #loginOverlay {
   font-weight: 800;
   text-decoration: none;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .event-btn:hover {
@@ -1035,7 +1047,8 @@ body.admin-ok #loginOverlay {
 
 /* PRINT MODE */
 @media print {
-  html, body {
+  html,
+  body {
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
@@ -1106,17 +1119,21 @@ body.admin-ok #loginOverlay {
     display: table-header-group;
   }
 
-  tr, td, th {
+  tr,
+  td,
+  th {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     break-after: avoid;
     page-break-after: avoid;
   }
 }
-
+/* Admin: skjulte tasks i listen */
 #tasks .row.is-hidden {
   opacity: 0.55;
   filter: grayscale(0.2);
@@ -1133,4 +1150,155 @@ body.admin-ok #loginOverlay {
 .task-card-full .pill {
   background: rgba(255, 80, 80, 0.15);
   border-color: rgba(255, 80, 80, 0.4);
+}
+
+/* ---------- Admin event overview ---------- */
+.admin-overview {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 67px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.overview-content {
+  display: grid;
+  gap: 16px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.overview-donut-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.overview-donut {
+  --percent: 0;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(rgba(124, 219, 185, 0.95) calc(var(--percent) * 1%), rgba(255, 255, 255, 0.12) 0);
+  position: relative;
+  box-shadow: var(--shadow);
+}
+
+.overview-donut::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.overview-donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+  text-align: center;
+  font-weight: 900;
+}
+
+.overview-donut-center span {
+  display: block;
+  font-size: 30px;
+}
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .overview-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.overview-stat {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.overview-stat strong {
+  display: block;
+  font-size: 24px;
+}
+
+.overview-stat span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.user-overview {
+  margin-top: 8px;
+}
+
+.user-overview summary {
+  cursor: pointer;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.user-list {
+  display: grid;
+  gap: 10px;
+}
+
+.user-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.user-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.user-card-title {
+  font-weight: 900;
+}
+
+.user-card-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.user-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.user-detail-list {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.user-detail-item {
+  color: var(--muted);
+  font-size: 13px;
 }
